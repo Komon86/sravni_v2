@@ -1,3 +1,7 @@
+import json
+from typing import List
+
+
 def read_file(file):
     """
     Считывает строки из файла в список, возвращает список строк.
@@ -8,7 +12,7 @@ def read_file(file):
     return lines
 
 
-def file_processing(lines):
+def lid_remover(lines):
     """
     Удаляет LID_X=, возвращает список строк.
     :param lines:
@@ -23,30 +27,55 @@ def file_processing(lines):
     return le
 
 
-def unwrap(clearlines):
+def unwrapper_old(clearlines):
     """
     Присоединяет продолжения строк к изначальной строке.
+    Использует второй список, возвращает список строк.
     """
-    queue = ''
-    index = 0
-    dollar = 0
-    for j in range(len(clearlines)):
-        if '$' in clearlines[j]:
-            dollar += 1
-    # print(dollar)
-    while index < dollar:
-        if '$' in clearlines[index]:
-            clearlines[index - 1] += queue
-            queue = ''
-            index += 1
+    #  queue = ''
+    #  index = 0
+    #  dollar = 0
+    #  for j in range(len(clearlines)):
+    #      if '$' in clearlines[j]:
+    #          dollar += 1
+    #  # print(dollar)
+    #  while index < dollar:
+    #      if '$' in clearlines[index]:
+    #          clearlines[index - 1] += queue
+    #          queue = ''
+    #          index += 1
+    #      else:
+    #          line = clearlines.pop(index)
+    #          queue += line
+    #  #       print(queue)
+    #  return clearlines
+    result_list = []
+    for line in clearlines:
+        line.rstrip()
+        if '$' in line:
+            result_list.append(line)
         else:
-            line = clearlines.pop(index)
-            queue += line
-    #       print(queue)
-    return clearlines
+            result_list[-1] += line
+    for line in result_list:
+        line += '\n'
+    return result_list
 
 
-def write(clearlines):
+def unwrapper(strings: List[str]):
+    """
+    Присоединяет продолжения строк к изначальной строке.
+    Не использует второй список, изменяет список на месте. Ничего не возвращает.
+    """
+    i = 0
+    while i < len(strings):
+        if "$" not in strings[i]:
+            strings[i - 1] += strings[i]
+            strings.pop(i)
+        else:
+            i += 1
+
+
+def changes_detector(clearlines):
     """
     Эта функция для записи ТОЛЬКО ТЕХ параметров, в которые внесены изменения.
     Нужна для того чтобы 54 птм отпараметрировать без проблем.
@@ -60,6 +89,23 @@ def write(clearlines):
         else:
             lst.append(j)
     return lst
+
+
+def wrapper(lst):
+    """
+    Сворачивает строки обратно по 80 символов
+    :param lst:
+    :return:
+    """
+    result = []
+    for i in lst:
+        if len(i) > 80:
+            while i:
+                result.append(i[:80])
+                i = i[80:]
+        else:
+            result.append(i)
+    return result
 
 
 def numerate(lst):
@@ -115,17 +161,16 @@ def make_dict(lst):
     return result
 
 
-filename = input('Введите имя файла: ')
-strings = read_file(filename)
-clear_lines = file_processing(strings)
-uw_lines = unwrap(clear_lines)
-result = make_dict(uw_lines)
+if __name__ == '__main__':
+    filename = 'ffr_7083_backup.txt'  # input('Введите имя файла: ')
+    strings = read_file(filename)
+    clear_lines = lid_remover(strings)
+    uw_lines = unwrapper_old(clear_lines)
+    result = make_dict(uw_lines)
+    o = json.dumps(result, sort_keys=True, indent=4)
+    print(o)
 # woTochka = write(clear_lines)
 # Ln = numerate(woTochka)
-
-
-# out = open('out.txt', 'w', encoding='utf-8')
-# for i in Ln:
-#     out.write(i)
-#     out.write('\n')
-# out.close()
+    out = open('out.txt', 'w', encoding='utf-8')
+    out.write(o)
+    out.close()
